@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: Nba-agent
+Version: 0.1.0
+Summary: A Nba agent with A2A protocol support
+Requires-Python: >=3.10.5
+Requires-Dist: pydantic-ai>=0.4.2
+Requires-Dist: httpx>=0.28.1
+Requires-Dist: python-dotenv>=1.1.0
+Requires-Dist: redis[hiredis]>=6.0.0
+Requires-Dist: jsonrpcclient>=4.0.3
+Requires-Dist: cairosvg>=2.7.1
+Requires-Dist: boto3>=1.29.0
+Requires-Dist: fastapi>=0.104.1
+Requires-Dist: uvicorn>=0.24.0
+Requires-Dist: pydantic>=2.4.2

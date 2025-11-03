@@ -1,0 +1,21 @@
+[project]
+name = "Nba-agent"
+version = "0.1.0"
+description = "A Nba agent with A2A protocol support"
+requires-python = ">=3.10.5"
+dependencies = [
+    "pydantic-ai>=0.4.2",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.1.0",
+    "redis[hiredis]>=6.0.0",
+    "jsonrpcclient>=4.0.3",
+    "cairosvg>=2.7.1",
+    "boto3>=1.29.0",
+    "fastapi>=0.104.1",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.4.2"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
