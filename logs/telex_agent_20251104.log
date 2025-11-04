@@ -1,0 +1,12 @@
+2025-11-04 14:39:40,284 - telex_agent - INFO - Received request: request-123
+2025-11-04 14:39:40,294 - telex_agent - INFO - Request: request-123 | Method: message/send | User: user-123 | Context: context-123
+2025-11-04 14:39:40,294 - telex_agent - ERROR - Error: request-123 | Internal error: name 'uuid4' is not defined
+2025-11-04 14:40:07,922 - telex_agent - INFO - Received request: request-123
+2025-11-04 14:40:07,923 - telex_agent - INFO - Request: request-123 | Method: message/send | User: user-123 | Context: context-123
+2025-11-04 14:40:07,923 - telex_agent - ERROR - Error: request-123 | Internal error: name 'uuid4' is not defined
+2025-11-04 14:41:37,355 - telex_agent - INFO - Received request: request-123
+2025-11-04 14:41:37,356 - telex_agent - INFO - Request: request-123 | Method: message/send | User: user-123 | Context: context-123
+2025-11-04 14:41:37,356 - telex_agent - ERROR - Error: request-123 | Internal error: name 'uuid4' is not defined
+2025-11-04 14:45:38,355 - telex_agent - INFO - Received request: request-123
+2025-11-04 14:45:38,364 - telex_agent - INFO - Request: request-123 | Method: message/send | User: user-123 | Context: context-123
+2025-11-04 14:45:38,380 - telex_agent - INFO - Response: request-123 | Task: 51312951-8078-4e19-a467-a178b927880b | State: completed | Length: 1

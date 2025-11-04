@@ -119,8 +119,8 @@ class TelexAgent:
     async def process_messages(self, messages, context_id=None, task_id=None, config=None):
         """Process messages from the user and return a task result"""
         # Generate IDs if not provided
-        task_id = task_id or str(uuid4())
-        context_id = context_id or str(uuid4())
+        task_id = task_id or str(uuid.uuid4())
+        context_id = context_id or str(uuid.uuid4())
         
         # Get the context, which will be initialized if it doesn't exist
         context = self.context_manager.get_context(context_id)

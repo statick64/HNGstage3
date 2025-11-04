@@ -1,0 +1,43 @@
+{
+  "history": [
+    {
+      "kind": "message",
+      "role": "user",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "What are the current NBA standings?",
+          "data": null,
+          "file": null,
+          "file_url": null,
+          "metadata": null
+        }
+      ],
+      "messageId": "msg-123",
+      "taskId": null,
+      "metadata": {
+        "telex_user_id": "user-123",
+        "telex_channel_id": "context-123"
+      }
+    },
+    {
+      "kind": "message",
+      "role": "agent",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "I received your message: 'What are the current NBA standings?'. I'm a Telex AI agent built with the A2A protocol. How can I help you today?",
+          "data": null,
+          "file": null,
+          "file_url": null,
+          "metadata": null
+        }
+      ],
+      "messageId": "762b4f56-d23e-42e6-bc3d-f07720f63867",
+      "taskId": null,
+      "metadata": null
+    }
+  ],
+  "last_updated": "2025-11-04T14:45:38.375888",
+  "metadata": {}
+}

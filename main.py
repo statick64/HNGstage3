@@ -295,7 +295,7 @@ class NBAAgent:
         try:
             if any(word in query.lower() for word in ["games", "match", "schedule"]):
                 # Default to current season if not specified
-                season = "2023-2024" if "2023" in query or "2024" in query else "2023-2024"
+                season = "2023" if "2023" in query else "2023"  # SportsData uses just the year
                 games_data = await self.get_games(season=season)
                 response_text = f"Here are the NBA games for the {season} season:\n\n"
                 
@@ -303,10 +303,20 @@ class NBAAgent:
                     response_text = f"Sorry, I couldn't retrieve games data: {games_data['error']}"
                 else:
                     for i, game in enumerate(games_data.get("response", [])[:5]):
-                        home_team = game.get("teams", {}).get("home", {}).get("name", "Unknown")
-                        away_team = game.get("teams", {}).get("visitors", {}).get("name", "Unknown")
-                        date = game.get("date", {}).get("start", "Unknown date")
-                        response_text += f"{i+1}. {away_team} @ {home_team} - {date}\n"
+                        # Update field names to match SportsData.io response format
+                        home_team = game.get("HomeTeam", "Unknown")
+                        away_team = game.get("AwayTeam", "Unknown")
+                        date = game.get("DateTime", "Unknown date")
+                        status = game.get("Status", "")
+                        home_score = game.get("HomeTeamScore", "")
+                        away_score = game.get("AwayTeamScore", "")
+                        
+                        if status == "Final":
+                            result = f"Final: {away_team} {away_score} - {home_team} {home_score}"
+                        else:
+                            result = f"{away_team} @ {home_team} - {date}"
+                            
+                        response_text += f"{i+1}. {result}\n"
                     
                     if len(games_data.get("response", [])) > 5:
                         response_text += f"\nShowing 5 of {len(games_data.get('response', []))} games."
@@ -319,10 +329,12 @@ class NBAAgent:
                     response_text = f"Sorry, I couldn't retrieve team data: {teams_data['error']}"
                 else:
                     for i, team in enumerate(teams_data.get("response", [])[:15]):
-                        name = team.get("name", "Unknown")
-                        nickname = team.get("nickname", "")
-                        city = team.get("city", "")
-                        response_text += f"{i+1}. {city} {name} ({nickname})\n"
+                        # Update the field names to match SportsData.io response format
+                        name = team.get("Name", "Unknown")
+                        city = team.get("City", "")
+                        key = team.get("Key", "")
+                        conference = team.get("Conference", "")
+                        response_text += f"{i+1}. {city} {name} ({key}) - {conference}\n"
                     
                     if len(teams_data.get("response", [])) > 15:
                         response_text += f"\nShowing 15 of {len(teams_data.get('response', []))} teams."
@@ -350,16 +362,18 @@ class NBAAgent:
                     response_text = f"Sorry, I couldn't retrieve player data: {players_data['error']}"
                 else:
                     for i, player in enumerate(players_data.get("response", [])[:10]):
-                        name = f"{player.get('firstname', '')} {player.get('lastname', '')}"
-                        team = player.get("team", {}).get("name", "Unknown team")
-                        position = player.get("leagues", {}).get("standard", {}).get("pos", "")
-                        response_text += f"{i+1}. {name} - {position} ({team})\n"
+                        # Update field names to match SportsData.io response format
+                        name = f"{player.get('FirstName', '')} {player.get('LastName', '')}"
+                        team = player.get("Team", "Unknown team")
+                        position = player.get("Position", "")
+                        jersey = player.get("Jersey", "")
+                        response_text += f"{i+1}. {name} - #{jersey} {position} ({team})\n"
                     
                     if len(players_data.get("response", [])) > 10:
                         response_text += f"\nShowing 10 of {len(players_data.get('response', []))} players."
             
             elif any(word in query.lower() for word in ["standings", "ranking", "leaderboard"]):
-                season = "2023-2024" if "2023" in query or "2024" in query else "2023-2024"
+                season = "2023" if "2023" in query else "2023"  # SportsData uses just the year
                 standings_data = await self.get_standings(season=season)
                 response_text = f"Here are the NBA standings for the {season} season:\n\n"
                 
@@ -367,12 +381,15 @@ class NBAAgent:
                     response_text = f"Sorry, I couldn't retrieve standings data: {standings_data['error']}"
                 else:
                     for i, standing in enumerate(standings_data.get("response", [])[:15]):
-                        team = standing.get("team", {}).get("name", "Unknown")
-                        conference = standing.get("conference", {}).get("name", "")
-                        rank = standing.get("conference", {}).get("rank", "")
-                        wins = standing.get("games", {}).get("win", {}).get("total", 0)
-                        losses = standing.get("games", {}).get("loss", {}).get("total", 0)
-                        response_text += f"{i+1}. {rank}. {team} ({conference}): {wins}-{losses}\n"
+                        # Update field names to match SportsData.io response format
+                        team = standing.get("Name", "Unknown")
+                        city = standing.get("City", "")
+                        conference = standing.get("Conference", "")
+                        division = standing.get("Division", "")
+                        wins = standing.get("Wins", 0)
+                        losses = standing.get("Losses", 0)
+                        percentage = standing.get("Percentage", 0)
+                        response_text += f"{i+1}. {city} {team} ({conference}/{division}): {wins}-{losses} ({percentage:.3f})\n"
                     
                     if len(standings_data.get("response", [])) > 15:
                         response_text += f"\nShowing 15 of {len(standings_data.get('response', []))} teams."
@@ -384,9 +401,23 @@ class NBAAgent:
                 if "error" in stats_data:
                     response_text = f"Sorry, I couldn't retrieve statistics data: {stats_data['error']}"
                 else:
-                    # Statistics processing would depend on the actual structure
-                    # This is a placeholder for the response format
-                    response_text = "The NBA statistics API provides detailed game, player and team statistics. Please specify what specific statistics you're interested in (e.g., player stats, team stats, game stats)."
+                    # Show top players based on points if no specific request
+                    response_text = "Here are some top NBA player stats:\n\n"
+                    players = sorted(stats_data.get("response", []), 
+                                    key=lambda x: x.get("Points", 0) if x.get("Points") is not None else 0, 
+                                    reverse=True)
+                    
+                    for i, player in enumerate(players[:10]):
+                        name = f"{player.get('FirstName', '')} {player.get('LastName', '')}"
+                        team = player.get('Team', '')
+                        points = player.get('Points', 0)
+                        rebounds = player.get('Rebounds', 0)
+                        assists = player.get('Assists', 0)
+                        
+                        response_text += f"{i+1}. {name} ({team}): {points} PTS, {rebounds} REB, {assists} AST\n"
+                    
+                    if len(players) > 10:
+                        response_text += f"\nShowing top 10 players by points."
             
             else:
                 response_text = "I'm an NBA Agent that can provide information about NBA games, teams, players, standings, and statistics. What would you like to know about the NBA?"
