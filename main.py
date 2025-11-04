@@ -19,14 +19,13 @@ from models.a2a import JSONRPCRequest, JSONRPCResponse, TaskResult, TaskStatus, 
 load_dotenv()
 
 class NBAAgent:
-    """NBA Agent for getting information about NBA games, teams, and players"""
+    """NBA Agent for getting information about NBA games, teams, and players using SportsData.io API"""
     def __init__(self, api_key=None, aws_config=None):
         self.api_key = api_key
         self.aws_config = aws_config
-        self.base_url = "https://api-nba-v1.p.rapidapi.com"
+        self.base_url = "https://api.sportsdata.io/v3/nba"
         self.headers = {
-            "X-RapidAPI-Key": self.api_key or os.getenv("RAPIDAPI_KEY", ""),
-            "X-RapidAPI-Host": "api-nba-v1.p.rapidapi.com"
+            "Ocp-Apim-Subscription-Key": self.api_key or os.getenv("SPORTSDATA_API_KEY", "")
         }
         self.http_client = httpx.AsyncClient()
         self.contexts = {}
@@ -117,117 +116,136 @@ class NBAAgent:
 
     async def get_games(self, date=None, team=None, season=None, league=None):
         """Get NBA games information"""
-        params = {}
-        endpoint = "/games"
-        
-        if date:
-            params["date"] = date
-        if team:
-            params["team"] = team
-        if season:
-            params["season"] = season
-        if league:
-            params["league"] = league
-
         try:
-            response = await self.http_client.get(
-                f"{self.base_url}{endpoint}",
-                params=params,
-                headers=self.headers
-            )
+            # SportsData.io uses different endpoints for different types of game data
+            # Using the games by date endpoint as default
+            if date:
+                # Format should be YYYY-MMM-DD (e.g. 2023-NOV-01)
+                formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%b-%d')
+                endpoint = f"{self.base_url}/scores/json/GamesByDate/{formatted_date}"
+            elif team:
+                # Get games by team
+                season_year = season or "2023"
+                endpoint = f"{self.base_url}/scores/json/Games/{season_year}"
+            else:
+                # Default to current season schedule
+                season_year = season or "2023"
+                endpoint = f"{self.base_url}/scores/json/Games/{season_year}"
+            
+            # SportsData.io uses API key as query parameter
+            params = {}
+            
+            response = await self.http_client.get(endpoint, headers=self.headers, params=params)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            
+            # If team was specified, filter the results
+            if team and data:
+                data = [game for game in data if team.lower() in game.get("HomeTeam", "").lower() or 
+                                               team.lower() in game.get("AwayTeam", "").lower()]
+            
+            return {"response": data}
         except Exception as e:
+            print(f"Error getting games data: {str(e)}")
             return {"error": str(e)}
 
     async def get_teams(self, league=None, season=None, team=None):
         """Get NBA teams information"""
-        params = {}
-        endpoint = "/teams"
-        
-        if league:
-            params["league"] = league
-        if season:
-            params["season"] = season
-        if team:
-            params["id"] = team
-
         try:
-            response = await self.http_client.get(
-                f"{self.base_url}{endpoint}",
-                params=params,
-                headers=self.headers
-            )
+            # SportsData.io teams endpoint
+            endpoint = f"{self.base_url}/scores/json/teams"
+            
+            response = await self.http_client.get(endpoint, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            
+            # Filter by team name if specified
+            if team and data:
+                data = [t for t in data if team.lower() in t.get("Name", "").lower() or 
+                                           team.lower() in t.get("Key", "").lower()]
+            
+            return {"response": data}
         except Exception as e:
+            print(f"Error getting teams data: {str(e)}")
             return {"error": str(e)}
 
     async def get_players(self, team=None, name=None):
         """Get NBA players information"""
-        params = {}
-        endpoint = "/players"
-        
-        if team:
-            params["team"] = team
-        if name:
-            params["search"] = name
-
         try:
-            response = await self.http_client.get(
-                f"{self.base_url}{endpoint}",
-                params=params,
-                headers=self.headers
-            )
+            if team:
+                # Get players by team
+                endpoint = f"{self.base_url}/scores/json/Players/{team}"
+            else:
+                # Get all active players
+                endpoint = f"{self.base_url}/scores/json/Players"
+            
+            response = await self.http_client.get(endpoint, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            
+            # Filter by player name if specified
+            if name and data:
+                data = [p for p in data if name.lower() in (p.get("FirstName", "") + " " + p.get("LastName", "")).lower()]
+            
+            return {"response": data}
         except Exception as e:
+            print(f"Error getting players data: {str(e)}")
             return {"error": str(e)}
 
     async def get_standings(self, league=None, season=None, team=None):
         """Get NBA standings information"""
-        params = {}
-        endpoint = "/standings"
-        
-        if league:
-            params["league"] = league
-        if season:
-            params["season"] = season
-        if team:
-            params["team"] = team
-
         try:
-            response = await self.http_client.get(
-                f"{self.base_url}{endpoint}",
-                params=params,
-                headers=self.headers
-            )
+            # Get the current season if not specified
+            season_year = season or "2023"
+            
+            # SportsData.io standings endpoint
+            endpoint = f"{self.base_url}/scores/json/Standings/{season_year}"
+            
+            response = await self.http_client.get(endpoint, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            
+            # Filter by team if specified
+            if team and data:
+                data = [s for s in data if team.lower() in s.get("Name", "").lower() or 
+                                           team.lower() in s.get("Key", "").lower()]
+            
+            return {"response": data}
         except Exception as e:
+            print(f"Error getting standings data: {str(e)}")
             return {"error": str(e)}
 
     async def get_statistics(self, game_id=None, team=None, player=None):
         """Get NBA statistics information"""
-        params = {}
-        endpoint = "/statistics"
-        
-        if game_id:
-            params["game"] = game_id
-        if team:
-            params["team"] = team
-        if player:
-            params["player"] = player
-
         try:
-            response = await self.http_client.get(
-                f"{self.base_url}{endpoint}",
-                params=params,
-                headers=self.headers
-            )
+            if game_id:
+                # Get box score for a specific game
+                endpoint = f"{self.base_url}/stats/json/BoxScore/{game_id}"
+            elif player:
+                # Get player season stats
+                endpoint = f"{self.base_url}/stats/json/PlayerSeasonStatsByPlayer/{player}"
+            elif team:
+                # Get team season stats
+                season_year = "2023"
+                endpoint = f"{self.base_url}/stats/json/TeamSeasonStats/{season_year}"
+                response = await self.http_client.get(endpoint, headers=self.headers)
+                response.raise_for_status()
+                all_team_stats = response.json()
+                # Filter for the requested team
+                data = [ts for ts in all_team_stats if team.lower() in ts.get("Name", "").lower() or 
+                                                    team.lower() in ts.get("Team", "").lower()]
+                return {"response": data}
+            else:
+                # Default to league leaders in points
+                endpoint = f"{self.base_url}/stats/json/PlayerSeasonStats/2023"
+            
+            response = await self.http_client.get(endpoint, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            
+            return {"response": data}
         except Exception as e:
+            print(f"Error getting statistics data: {str(e)}")
             return {"error": str(e)}
 
     async def process_messages(self, messages, context_id=None, task_id=None, config=None):
@@ -437,7 +455,7 @@ async def lifespan(app: FastAPI):
 
     # Startup: Initialize the NBA agent
     nba_agent = NBAAgent(
-        api_key=os.getenv("RAPIDAPI_KEY"),
+        api_key=os.getenv("SPORTSDATA_API_KEY"),
         aws_config={
             "access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
             "secret_access_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
